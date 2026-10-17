@@ -20,7 +20,7 @@ export class HelpCommand implements Command{
       chalk.green('  --help                       Выводит справку (команда по умолчанию).'),
       chalk.cyan('  --version                    Выводит версию из package.json.'),
       chalk.magenta('  --import <filepath>          Читает TSV и выводит предложения в консоль.'),
-      chalk.yellow('  --generate <n> <path> <url>   Генерация тестовых данных (следующий этап, пока недоступна).')
+      chalk.yellow('  --generate <n> <path> <url>   Создаёт n предложений в TSV из данных JSON-сервера.')
     ].join('\n'));
   }
 }

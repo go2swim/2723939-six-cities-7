@@ -7,7 +7,7 @@ export const TSV_HEADER = ['Title', 'Description', 'PublicationDate', 'City', 'P
   'Images', 'IsPremium', 'IsFavorite', 'Rating', 'Type', 'Rooms', 'Guests', 'Price', 'Goods',
   'AuthorName', 'AuthorEmail', 'AuthorAvatar', 'AuthorType', 'CommentsCount', 'Latitude', 'Longitude'].join('\t');
 
-const CITY_COORDINATES: Record<CityName, [number, number]> = {
+export const CITY_COORDINATES: Record<CityName, [number, number]> = {
   [CityName.Paris]: [48.85661, 2.351499],
   [CityName.Cologne]: [50.938361, 6.959974],
   [CityName.Brussels]: [50.846557, 4.351697],
