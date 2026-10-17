@@ -12,6 +12,8 @@ import {TSVFileWriter} from '../dist/shared/file-writer/tsv-file-writer.js';
 import {OfferGenerator, validateMockData} from '../dist/shared/offer-generator.js';
 import {parseOffer, TSV_HEADER} from '../dist/shared/offer-parser.js';
 import {serializeOffer} from '../dist/shared/offer-serializer.js';
+import 'reflect-metadata';
+import {ImportCommand} from '../dist/cli/commands/import.command.js';
 
 const exec = promisify(execFile);
 const {offers} = JSON.parse(await readFile(new URL('../mocks/mock-server-data.json', import.meta.url), 'utf8'));
@@ -65,7 +67,7 @@ test('reader preserves UTF-8 across chunks, BOM, CRLF, empty lines and final lin
   }
 });
 
-test('CLI generates from HTTP and imports the resulting file', async (t) => {
+test('CLI generates from HTTP and validates generation parameters', async (t) => {
   const directory = await temporary(t);
   const filename = join(directory, 'offers.tsv');
   const server = createServer((request, response) => {
@@ -78,9 +80,6 @@ test('CLI generates from HTTP and imports the resulting file', async (t) => {
   const generated = await runCLI('--generate', '20', filename, `${address}/offers`);
   assert.match(generated.stdout, /Создано предложений: 20/);
   assert.equal((await readFile(filename, 'utf8')).trimEnd().split('\n').length, 21);
-  const imported = await runCLI('--import', filename);
-  assert.match(imported.stdout, /Прочитано предложений: 20/);
-  assert.equal((imported.stdout.match(/"title":/g) ?? []).length, 20);
   const original = await readFile(filename, 'utf8');
   for (const count of ['0', '-1', '1.5', 'NaN', '9007199254740992']) {
     await assert.rejects(runCLI('--generate', count, filename, `${address}/offers`), {code: 1});
@@ -96,11 +95,21 @@ test('file errors and malformed rows report failure with the line number', async
   await assert.rejects(runCLI('--import', filename), {code: 1});
   const line = serializeOffer(new OfferGenerator(offers).generate());
   await new TSVFileWriter(filename).write([`${TSV_HEADER}\n`, `${line}\n`, 'invalid\n']);
-  await assert.rejects(runCLI('--import', filename), (error) => {
-    assert.equal(error.code, 1);
-    assert.match(error.stderr, /:3: Invalid column count/);
-    assert.match(error.stderr, /Successfully read: 1/);
+  let disconnected = false;
+  const saved = [];
+  const importer = new ImportCommand(
+    {connect: async () => {}, disconnect: async () => { disconnected = true; }},
+    {findByEmail: async () => ({id: 'author-id'})},
+    {create: async (offer) => saved.push(offer)},
+    {info: () => {}}
+  );
+  await assert.rejects(importer.execute(filename, 'mongodb://127.0.0.1/test'), (error) => {
+    assert.match(error.message, /:3: Invalid column count/);
+    assert.match(error.message, /Successfully saved: 1/);
     return true;
   });
+  assert.equal(disconnected, true);
+  assert.equal(saved.length, 1);
+  assert.equal(saved[0].authorId, 'author-id');
   await assert.rejects(new TSVFileWriter(directory).write(['test\n']));
 });

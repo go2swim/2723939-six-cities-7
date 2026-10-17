@@ -12,6 +12,9 @@
     "start": "npm run build && node ./dist/main.rest.js",
     "start:pretty": "npm run build && node ./dist/main.rest.js --pretty",
     "mock:server": "json-server --watch mocks/mock-server-data.json",
+    "db:up": "docker compose up -d --wait",
+    "db:down": "docker compose down",
+    "test:db": "npm run build && node --test tests/database.test.mjs",
     "test": "npm run build && node --test tests/cli.test.mjs tests/infrastructure.test.mjs",
     "build": "npm run clean && npm run compile",
     "lint": "eslint src/ --ext .ts",
@@ -46,6 +49,7 @@
     "convict-format-with-validator": "6.2.0",
     "dotenv": "16.6.1",
     "inversify": "6.0.2",
+    "mongoose": "7.8.12",
     "pino": "9.14.0",
     "reflect-metadata": "0.2.2"
   }
