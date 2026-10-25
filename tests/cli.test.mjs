@@ -9,7 +9,8 @@ import {fileURLToPath} from 'node:url';
 import {test} from 'node:test';
 import {TSVFileReader} from '../dist/shared/file-reader/tsv-file-reader.js';
 import {TSVFileWriter} from '../dist/shared/file-writer/tsv-file-writer.js';
-import {OfferGenerator, validateMockData} from '../dist/shared/offer-generator.js';
+import {OfferGenerator} from '../dist/shared/offer-generator.js';
+import {validateMockData} from '../dist/shared/mock-data-validator.js';
 import {parseOffer, TSV_HEADER} from '../dist/shared/offer-parser.js';
 import {serializeOffer} from '../dist/shared/offer-serializer.js';
 import 'reflect-metadata';
@@ -46,7 +47,12 @@ test('generated offers survive TSV round-trip and meet the required ranges', () 
 
 test('invalid mock responses are rejected', () => {
   for (const data of [null, {}, [], [null], [{...offers[0], images: []}],
-    [{...offers[0], title: 'Invalid\ttitle'}], [{...offers[0], city: 'London'}]]) {
+    [{...offers[0], title: 'Invalid\ttitle'}], [{...offers[0], city: 'London'}],
+    [{...offers[0], author: null}],
+    [{...offers[0], author: {...offers[0].author, name: 'a'.repeat(16)}}],
+    [{...offers[0], author: {...offers[0].author, email: 'invalid-email'}}],
+    [{...offers[0], author: {...offers[0].author, avatar: 'invalid\nimage.jpg'}}],
+    [{...offers[0], images: [...offers[0].images.slice(0, 5), 'invalid;image.jpg']}]]) {
     assert.throws(() => validateMockData(data));
   }
 });
